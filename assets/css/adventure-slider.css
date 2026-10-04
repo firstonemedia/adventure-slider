@@ -55,12 +55,22 @@
 
 .ea-adventure-slider__heading-button {
 	appearance: none;
+	box-sizing: border-box;
+	max-width: 100%;
+	min-width: 0;
 	padding: 8px 14px;
 	border: 1px solid currentColor;
 	background: transparent;
 	color: inherit;
 	font: inherit;
 	cursor: pointer;
+	overflow-wrap: anywhere;
+	transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.ea-adventure-slider__heading-button:hover:not([aria-current="true"]),
+.ea-adventure-slider__heading-button:active:not([aria-current="true"]) {
+	background: rgba(31, 33, 36, .08);
 }
 
 .ea-adventure-slider__heading-button[aria-current="true"] {
@@ -88,22 +98,40 @@
 }
 
 .ea-adventure-slider__navigation {
+	box-sizing: border-box;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	justify-content: space-between;
+	justify-content: flex-start;
 	gap: 12px;
+	max-width: 100%;
+	min-width: 0;
+	padding: 4px;
+	border: 1px solid rgba(31, 33, 36, .18);
+	border-radius: 4px;
+	background: rgba(31, 33, 36, .03);
 	margin-block-start: 16px;
 }
 
 .ea-adventure-slider__nav-button {
 	appearance: none;
+	box-sizing: border-box;
+	flex: 0 1 auto;
+	max-width: 100%;
+	min-width: 0;
 	padding: 10px 18px;
 	border: 1px solid currentColor;
 	background: transparent;
 	color: inherit;
 	font: inherit;
 	cursor: pointer;
+	overflow-wrap: anywhere;
+	transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
+}
+
+.ea-adventure-slider__nav-button:hover:not(:disabled),
+.ea-adventure-slider__nav-button:active:not(:disabled) {
+	background: rgba(31, 33, 36, .08);
 }
 
 .ea-adventure-slider__nav-button:disabled {
@@ -112,25 +140,47 @@
 }
 
 .ea-adventure-slider__dots {
+	box-sizing: border-box;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: center;
-	gap: 8px;
+	gap: 4px;
+	max-width: 100%;
+	min-width: 0;
 	margin-block-start: 14px;
 }
 
 .ea-adventure-slider__dot {
-	width: 10px;
-	height: 10px;
+	box-sizing: border-box;
+	display: inline-grid;
+	flex: 0 0 44px;
+	place-items: center;
+	width: 44px;
+	height: 44px;
 	padding: 0;
 	border: 0;
 	border-radius: 999px;
-	background: #a4afb7;
+	background: transparent;
 	cursor: pointer;
+	transition: background-color 150ms ease;
 }
 
-.ea-adventure-slider__dot[aria-current="true"] {
+.ea-adventure-slider__dot::before {
+	width: 10px;
+	height: 10px;
+	border-radius: 999px;
+	background: #a4afb7;
+	content: "";
+	transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.ea-adventure-slider__dot:hover::before,
+.ea-adventure-slider__dot:active::before {
+	background: #6f767d;
+}
+
+.ea-adventure-slider__dot[aria-current="true"]::before {
 	background: #1f2124;
 	transform: scale(1.2);
 }
@@ -164,6 +214,9 @@
 }
 
 .ea-adventure-slider__breadcrumbs {
+	box-sizing: border-box;
+	max-width: 100%;
+	min-width: 0;
 	margin-block-start: 16px;
 }
 
@@ -177,8 +230,10 @@
 	flex-wrap: wrap;
 	gap: 8px;
 	margin: 0;
+	max-width: 100%;
 	padding: 0;
 	list-style: none;
+	overflow-wrap: anywhere;
 }
 
 .ea-adventure-slider__breadcrumb-item {
@@ -191,16 +246,34 @@
 
 button.ea-adventure-slider__breadcrumb-label {
 	appearance: none;
+	max-width: 100%;
 	padding: 0;
 	border: 0;
 	background: none;
 	color: inherit;
 	text-decoration: underline;
 	cursor: pointer;
+	overflow-wrap: anywhere;
 }
 
 .ea-adventure-slider__breadcrumb-label[aria-current="step"] {
 	font-weight: 600;
+}
+
+.ea-adventure-slider__heading-button:focus,
+.ea-adventure-slider__nav-button:focus,
+.ea-adventure-slider__dot:focus,
+button.ea-adventure-slider__breadcrumb-label:focus {
+	outline: 3px solid #1f2124;
+	outline-offset: 3px;
+	box-shadow: 0 0 0 6px #fff;
+}
+
+.ea-adventure-slider__heading-button:focus-visible,
+.ea-adventure-slider__nav-button:focus-visible,
+.ea-adventure-slider__dot:focus-visible,
+button.ea-adventure-slider__breadcrumb-label:focus-visible {
+	outline-color: currentColor;
 }
 
 .eas-destination-options {
@@ -237,7 +310,45 @@ button.ea-adventure-slider__breadcrumb-label {
 }
 
 @media (prefers-reduced-motion: reduce) {
+	.ea-adventure-slider__heading-button,
+	.ea-adventure-slider__nav-button,
+	.ea-adventure-slider__dot,
+	.ea-adventure-slider__dot::before,
 	.ea-adventure-slider__progress-bar {
 		transition: none;
+	}
+}
+
+@media (max-width: 480px) {
+	.ea-adventure-slider__heading {
+		gap: 6px;
+	}
+
+	.ea-adventure-slider__heading-button,
+	.ea-adventure-slider__nav-button {
+		min-height: 44px;
+		padding-inline: 12px;
+	}
+
+	.ea-adventure-slider__navigation {
+		gap: 8px;
+		padding: 4px;
+	}
+
+	.ea-adventure-slider__nav-button {
+		flex: 1 1 calc(50% - 8px);
+	}
+
+	.ea-adventure-slider__dots {
+		gap: 0;
+		margin-block-start: 10px;
+	}
+
+	.ea-adventure-slider__breadcrumbs {
+		margin-block-start: 12px;
+	}
+
+	.ea-adventure-slider__breadcrumb-list {
+		gap: 6px;
 	}
 }
