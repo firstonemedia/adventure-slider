@@ -7,6 +7,8 @@ const repo = path.resolve(__dirname, '..');
 const fixturePath = process.env.EAS_FIXTURE_PATH || path.join(__dirname, 'fixtures', 'fixture-defaults.json');
 const idCases = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'slide-id-cases.json'), 'utf8'));
 const sessionCases = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'session-history-cases.json'), 'utf8'));
+const heightCases = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'height-transition-cases.json'), 'utf8'));
+const editorPerformanceCases = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'editor-performance-cases.json'), 'utf8'));
 const pageUrl = process.env.EAS_URL || 'http://127.0.0.1:8091/elementor-7/';
 const widget = fs.readFileSync(path.join(repo, 'includes/widgets/class-adventure-slider-widget.php'), 'utf8');
 const plugin = fs.readFileSync(path.join(repo, 'includes/class-plugin.php'), 'utf8');
@@ -207,6 +209,50 @@ check('multiple-slider isolation contract is present in source', () => {
   has(widget, 'data-adventure-instance');
   has(frontend, "'eas:' + window.location.pathname + ':'");
   has(frontend, 'root.dataset.adventureInstance');
+});
+
+check('height transition cases and defensive runtime contract are present', () => {
+  assert.deepEqual(heightCases.map(testCase => testCase.name), [
+    'different-height-slides', 'equal-height-slides', 'empty-slide',
+    'missing-child-content', 'rapid-navigation', 'reduced-motion',
+    'missing-element-animate', 'destroy-during-transition', 'multiple-instances'
+  ]);
+  for (const method of [
+    'measureStackHeight', 'measureSlideHeight', 'prepareHeightTransition',
+    'startHeightTransition', 'clearHeightTransition'
+  ]) {
+    has(frontend, 'AdventureSlider.prototype.' + method);
+  }
+  has(frontend, 'this.heightTransition = null');
+  has(frontend, 'this.clearHeightTransition()');
+  has(frontend, 'typeof from.animate !== \'function\'');
+  has(frontend, 'prefers-reduced-motion: reduce');
+  has(frontend, 'this.slidesRoot.style.removeProperty( \'height\' )');
+  has(frontend, 'this.slidesRoot.style.removeProperty( \'transition\' )');
+});
+
+check('editor performance cases cover scaled nested views and safe refresh behavior', () => {
+  assert.deepEqual(editorPerformanceCases.slice(0, 3).map(testCase => testCase.slides), [3, 10, 20]);
+  assert.ok(editorPerformanceCases.every(testCase => testCase.expected_repeater_conversions_per_render === 1 || testCase.expected));
+  has(editor, 'this.slideItemsCache = null');
+  has(editor, 'getSlideItems()');
+  has(editor, 'this.slideItemsCache = repeaterItems( this.model.getSetting( \'slides\' ) )');
+  has(editor, 'window.clearTimeout( this.activationTimer )');
+  has(editor, 'this.activationTimer = 0');
+  has(editor, 'onRemove()');
+  has(editor, 'data-adventure-slide');
+  has(editor, 'easDestinationListenerAdded');
+  assert.equal((widget.match(/'render_type'\s*=>\s*'none'/g) || []).length, 3);
+  has(editor, 'bindSlideItemEvents()');
+  has(editor, 'onSlideItemChange( model )');
+  has(editor, 'updateSlidePreview( index )');
+  has(editor, 'syncEditorSliderInstance( previousId, id )');
+  has(editor, "change:slide_title change:slide_id");
+  has(editor, "change:breadcrumb_label");
+  has(editor, 'onBreadcrumbLabelChange( model )');
+  has(editor, 'updateBreadcrumbPreview( index )');
+  has(editor, 'item.breadcrumb_label || title');
+  has(editor, '.ea-adventure-slider__breadcrumb-label[aria-current="step"]');
 });
 
 async function liveChecks() {

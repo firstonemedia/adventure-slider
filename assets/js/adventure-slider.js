@@ -28,6 +28,7 @@
 		this.history = [];
 		this.currentId = '';
 		this.animations = [];
+		this.heightTransition = null;
 		this.autoplayTimer = 0;
 		this.pointerStart = null;
 		this.destroyed = false;
@@ -203,9 +204,11 @@
 			this.finishTransition( from, to, options );
 			return true;
 		}
+		this.prepareHeightTransition( from, to, reducedMotion );
 
 		to.hidden = false;
 		to.setAttribute( 'aria-hidden', 'false' );
+		this.startHeightTransition();
 		from.setAttribute( 'aria-hidden', 'true' );
 		this.slidesRoot.classList.add( 'is-transitioning' );
 		var distance = getComputedStyle( this.root ).getPropertyValue( '--ea-transition-distance' ).trim() || '12%';
@@ -228,6 +231,11 @@
 		}
 
 		var timing = { duration: this.options.speed, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'both' };
+		if ( typeof from.animate !== 'function' || typeof to.animate !== 'function' ) {
+			this.finishTransition( from, to, options );
+			return true;
+		}
+
 		var fromAnimation = from.animate( fromFrames, timing );
 		var toAnimation = to.animate( toFrames, timing );
 		this.animations = [ fromAnimation, toAnimation ];
@@ -251,6 +259,7 @@
 			slide.style.removeProperty( 'transform' );
 		} );
 		this.slidesRoot.classList.remove( 'is-transitioning' );
+		this.clearHeightTransition();
 		this.updateUi();
 		if ( options.focus !== false && ! this.editorMode ) {
 			this.focusSlide( to );
@@ -260,6 +269,78 @@
 			detail: { slideId: this.currentId, previousSlideId: from ? from.dataset.adventureSlide : '' }
 		} ) );
 		this.startAutoplay();
+	};
+
+	AdventureSlider.prototype.measureStackHeight = function () {
+		if ( ! this.slidesRoot ) {
+			return 0;
+		}
+		var rect = typeof this.slidesRoot.getBoundingClientRect === 'function' ? this.slidesRoot.getBoundingClientRect() : null;
+		var height = rect && Number.isFinite( rect.height ) ? rect.height : this.slidesRoot.offsetHeight;
+		return Number.isFinite( height ) ? Math.max( 0, height ) : 0;
+	};
+
+	AdventureSlider.prototype.measureSlideHeight = function ( slide ) {
+		if ( ! this.slidesRoot || ! slide ) {
+			return 0;
+		}
+		var hiddenStates = this.slides.map( function ( item ) {
+			return { slide: item, hidden: item.hidden };
+		} );
+		this.slides.forEach( function ( item ) { item.hidden = true; } );
+		slide.hidden = false;
+		var height = this.measureStackHeight();
+		hiddenStates.forEach( function ( state ) { state.slide.hidden = state.hidden; } );
+		return height;
+	};
+
+	AdventureSlider.prototype.prepareHeightTransition = function ( from, to, reducedMotion ) {
+		this.clearHeightTransition();
+		if ( reducedMotion || ! this.slidesRoot || ! from || ! to || from === to ) {
+			return;
+		}
+		var fromHeight = this.measureSlideHeight( from );
+		var toHeight = this.measureSlideHeight( to );
+		if ( fromHeight === toHeight ) {
+			return;
+		}
+		this.heightTransition = {
+			fromHeight: fromHeight,
+			toHeight: toHeight,
+			previousHeight: this.slidesRoot.style.height,
+			previousTransition: this.slidesRoot.style.transition
+		};
+		this.slidesRoot.style.height = fromHeight + 'px';
+	};
+
+	AdventureSlider.prototype.startHeightTransition = function () {
+		var transition = this.heightTransition;
+		if ( ! transition || ! this.slidesRoot ) {
+			return;
+		}
+		this.slidesRoot.style.transition = 'height ' + this.options.speed + 'ms cubic-bezier(.22,.61,.36,1)';
+		void this.slidesRoot.offsetHeight;
+		if ( this.heightTransition === transition ) {
+			this.slidesRoot.style.height = transition.toHeight + 'px';
+		}
+	};
+
+	AdventureSlider.prototype.clearHeightTransition = function () {
+		var transition = this.heightTransition;
+		if ( ! transition || ! this.slidesRoot ) {
+			return;
+		}
+		if ( transition.previousHeight ) {
+			this.slidesRoot.style.height = transition.previousHeight;
+		} else {
+			this.slidesRoot.style.removeProperty( 'height' );
+		}
+		if ( transition.previousTransition ) {
+			this.slidesRoot.style.transition = transition.previousTransition;
+		} else {
+			this.slidesRoot.style.removeProperty( 'transition' );
+		}
+		this.heightTransition = null;
 	};
 
 	AdventureSlider.prototype.cancelAnimations = function () {
@@ -513,6 +594,7 @@
 		this.destroyed = true;
 		this.pauseAutoplay();
 		this.cancelAnimations();
+		this.clearHeightTransition();
 		this.root.removeEventListener( 'click', this.boundClick );
 		this.root.removeEventListener( 'keydown', this.boundKeydown );
 		if ( this.slidesRoot ) {

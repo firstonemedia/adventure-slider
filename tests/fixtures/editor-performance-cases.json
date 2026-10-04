@@ -1,0 +1,33 @@
+[
+  {
+    "name": "three-slide-editor-state",
+    "slides": 3,
+    "expected_repeater_conversions_per_render": 1
+  },
+  {
+    "name": "ten-slide-editor-state",
+    "slides": 10,
+    "expected_repeater_conversions_per_render": 1
+  },
+  {
+    "name": "twenty-slide-editor-state",
+    "slides": 20,
+    "expected_repeater_conversions_per_render": 1
+  },
+  {
+    "name": "field-edit-invalidation",
+    "expected": "next-render-refreshes-cache-without-changing-stored-settings"
+  },
+  {
+    "name": "repeated-editor-refresh",
+    "expected": "obsolete-activation-timer-is-cancelled"
+  },
+  {
+    "name": "destination-choices",
+    "expected": "slide-list-remains-indexed-by-canonical-dom-slide-data"
+  },
+  {
+    "name": "slide-selection",
+    "expected": "active-item-index-and-nested-child-selection-remain-unchanged"
+  }
+]

@@ -122,6 +122,7 @@ final class Adventure_Slider_Widget extends Widget_Nested_Base {
 				'type'        => Controls_Manager::TEXT,
 				'default'     => esc_html__( 'Slide', 'elementor-adventure-slider' ),
 				'label_block' => true,
+				'render_type' => 'none',
 			]
 		);
 		$repeater->add_control(
@@ -132,6 +133,7 @@ final class Adventure_Slider_Widget extends Widget_Nested_Base {
 				'default'     => '',
 				'placeholder' => 'international-first-timer',
 				'label_block' => true,
+				'render_type' => 'none',
 				'ai'          => [ 'active' => false ],
 				'description' => esc_html__( 'Lowercase letters, numbers, hyphens and underscores. Keep this stable after linking buttons to it.', 'elementor-adventure-slider' ),
 			]
@@ -144,6 +146,7 @@ final class Adventure_Slider_Widget extends Widget_Nested_Base {
 				'default'     => '',
 				'placeholder' => esc_html__( 'Uses the editor label when empty', 'elementor-adventure-slider' ),
 				'label_block' => true,
+				'render_type' => 'none',
 			]
 		);
 		$repeater->add_control(

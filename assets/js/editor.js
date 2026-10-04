@@ -97,16 +97,32 @@
 			}
 
 			onRender() {
+				this.slideItemsCache = null;
 				super.onRender();
+				this.bindSlideItemEvents();
 				var editSettings = this.model.get( 'editSettings' );
 				if ( editSettings && 'function' === typeof this.listenTo ) {
 					this.stopListening( editSettings, 'change:activeItemIndex', this.onActiveItemIndexChange );
 					this.listenTo( editSettings, 'change:activeItemIndex', this.onActiveItemIndexChange );
 				}
-				window.setTimeout( function () {
+				if ( this.activationTimer ) {
+					window.clearTimeout( this.activationTimer );
+				}
+				this.activationTimer = window.setTimeout( function () {
+					this.activationTimer = 0;
 					var requested = Number( editSettings && editSettings.get( 'activeItemIndex' ) ) - 1;
 					this.activateSlideByIndex( Number.isInteger( requested ) && requested >= 0 ? requested : 0, true );
 				}.bind( this ), 0 );
+			}
+
+			onRemove() {
+				if ( this.activationTimer ) {
+					window.clearTimeout( this.activationTimer );
+					this.activationTimer = 0;
+				}
+				if ( 'function' === typeof super.onRemove ) {
+					super.onRemove();
+				}
 			}
 
 			getChildIndex( childView ) {
@@ -120,12 +136,141 @@
 			}
 
 			getSlideItem( index ) {
-				return repeaterItems( this.model.getSetting( 'slides' ) )[ index ] || {};
+				return this.getSlideItems()[ index ] || {};
+			}
+
+			getSlideItems() {
+				if ( ! this.slideItemsCache ) {
+					this.slideItemsCache = repeaterItems( this.model.getSetting( 'slides' ) );
+				}
+				return this.slideItemsCache;
+			}
+
+			bindSlideItemEvents() {
+				var collection = this.model.getSetting( 'slides' );
+				if ( this.slideItemModels ) {
+					this.slideItemModels.forEach( function ( model ) { this.stopListening( model ); }, this );
+				}
+				this.slideItemModels = collection && Array.isArray( collection.models ) ? collection.models.slice() : [];
+				this.slideItemModels.forEach( function ( model ) {
+					this.listenTo( model, 'change:slide_title change:slide_id', this.onSlideItemChange );
+					this.listenTo( model, 'change:breadcrumb_label', this.onBreadcrumbLabelChange );
+				}, this );
+			}
+
+			getSlideIndex( model ) {
+				var collection = this.model.getSetting( 'slides' );
+				return collection && 'function' === typeof collection.indexOf ? collection.indexOf( model ) : -1;
+			}
+
+			onSlideItemChange( model ) {
+				var index = this.getSlideIndex( model );
+				if ( index < 0 ) { return; }
+				this.slideItemsCache = null;
+				this.updateSlidePreview( index );
+			}
+
+			onBreadcrumbLabelChange( model ) {
+				var index = this.getSlideIndex( model );
+				if ( index < 0 ) { return; }
+				this.slideItemsCache = null;
+				this.updateBreadcrumbPreview( index );
+			}
+
+			updateBreadcrumbPreview( index ) {
+				var items = this.getSlideItems();
+				var item = items[ index ] || {};
+				var title = String( item.slide_title || 'slide-' + ( index + 1 ) );
+				var breadcrumb = String( item.breadcrumb_label || title );
+				var slide = this.$el.find( '.ea-adventure-slider__slides > .ea-adventure-slide' ).get( index );
+				if ( ! slide ) { return; }
+				slide.dataset.breadcrumbTitle = breadcrumb;
+				if ( ! slide.classList.contains( 'is-active' ) ) { return; }
+				var label = this.$el.find( '.ea-adventure-slider__breadcrumb-label[aria-current="step"]' ).get( 0 );
+				if ( label ) { label.textContent = breadcrumb; }
+			}
+
+			updateSlidePreview( index ) {
+				var items = this.getSlideItems();
+				var item = items[ index ] || {};
+				var fallback = 'slide-' + ( index + 1 );
+				var id = cleanId( item.slide_id, fallback );
+				var aliases = legacyAliases( item.slide_id, id, index );
+				var title = String( item.slide_title || fallback );
+				var breadcrumb = String( item.breadcrumb_label || title );
+				var slide = this.$el.find( '.ea-adventure-slider__slides > .ea-adventure-slide' ).get( index );
+				if ( ! slide ) { return; }
+				var previousId = slide.dataset.adventureSlide || '';
+				slide.dataset.adventureSlide = id;
+				slide.dataset.slideTitle = title;
+				slide.dataset.breadcrumbTitle = breadcrumb;
+				slide.setAttribute( 'aria-label', ( index + 1 ) + ' of ' + items.length + ': ' + title );
+				if ( aliases.length ) {
+					slide.setAttribute( 'data-adventure-aliases', JSON.stringify( aliases ) );
+				} else {
+					slide.removeAttribute( 'data-adventure-aliases' );
+				}
+
+				var heading = this.$el.find( '[data-adventure-editor-slide]' ).eq( index ).get( 0 );
+				if ( heading ) {
+					heading.dataset.adventureEditorSlide = id;
+					heading.dataset.adventureTarget = id;
+					heading.textContent = title;
+				}
+				var dot = this.$el.find( '.ea-adventure-slider__dot' ).eq( index ).get( 0 );
+				if ( dot ) {
+					dot.dataset.adventureTarget = id;
+					dot.setAttribute( 'aria-label', 'Go to slide ' + ( index + 1 ) );
+				}
+				if ( previousId !== id ) {
+					this.syncEditorSliderInstance( previousId, id );
+				}
+				var root = this.$el.get( 0 );
+				if ( root && slide === root.querySelector( '.ea-adventure-slider__slides > .ea-adventure-slide.is-active' ) ) {
+					updateEditorStatus( root, slide );
+				}
+			}
+
+			syncEditorSliderInstance( previousId, currentId ) {
+				var root = this.$el.get( 0 );
+				var instance = root && root.adventureSlider;
+				if ( ! instance ) { return; }
+				var history = Array.isArray( instance.history ) ? instance.history.slice() : [];
+				var initial = instance.options && instance.options.initial;
+				var active = instance.currentId;
+				var slides = root.querySelectorAll( '.ea-adventure-slider__slides > .ea-adventure-slide' );
+				instance.byId = Object.create( null );
+				instance.aliases = Object.create( null );
+				Array.prototype.forEach.call( slides, function ( slide ) {
+					var id = slide.dataset.adventureSlide || '';
+					if ( id && ! instance.byId[ id ] ) { instance.byId[ id ] = slide; }
+				} );
+				Array.prototype.forEach.call( slides, function ( slide ) {
+					var id = slide.dataset.adventureSlide || '';
+					var encoded = slide.getAttribute( 'data-adventure-aliases' );
+					if ( ! encoded ) { return; }
+					try {
+						JSON.parse( encoded ).forEach( function ( alias ) {
+							alias = String( alias || '' ).toLowerCase();
+							if ( alias && ! instance.byId[ alias ] && ! instance.aliases[ alias ] ) {
+								instance.aliases[ alias ] = id;
+							}
+						} );
+					} catch ( error ) {
+						// Malformed editor metadata must not stop field editing.
+					}
+				} );
+				if ( previousId === active ) { active = currentId; }
+				if ( previousId === initial ) { initial = currentId; }
+				instance.currentId = active;
+				if ( instance.options ) { instance.options.initial = initial; }
+				instance.history = history.map( function ( id ) { return id === previousId ? currentId : id; } );
+				if ( 'function' === typeof instance.updateUi ) { instance.updateUi(); }
 			}
 
 			onAddChild( childView ) {
 				var index = this.getChildIndex( childView );
-				var items = repeaterItems( this.model.getSetting( 'slides' ) );
+				var items = this.getSlideItems();
 				var item = items[ index ] || {};
 				var fallback = 'slide-' + ( index + 1 );
 				var id = cleanId( item.slide_id, fallback );
