@@ -1,0 +1,61 @@
+[
+  {
+    "name": "valid",
+    "input": "choice",
+    "php_canonical": "choice",
+    "editor_legacy": "choice",
+    "front_end_target": "choice"
+  },
+  {
+    "name": "spaces",
+    "input": "First Choice",
+    "php_canonical": "firstchoice",
+    "editor_legacy": "first-choice",
+    "front_end_target": "first-choice"
+  },
+  {
+    "name": "punctuation",
+    "input": "first.choice!",
+    "php_canonical": "firstchoice",
+    "editor_legacy": "first-choice-",
+    "front_end_target": "first-choice-"
+  },
+  {
+    "name": "missing",
+    "input": "",
+    "index": 0,
+    "php_canonical": "slide-1",
+    "editor_legacy": "slide-0",
+    "front_end_target": "slide-1"
+  },
+  {
+    "name": "duplicate",
+    "input": "choice",
+    "index": 1,
+    "php_canonical": "slide-2",
+    "editor_legacy": "choice",
+    "front_end_target": "slide-2"
+  },
+  {
+    "name": "punctuation-collision-first",
+    "input": "first.choice",
+    "php_canonical": "firstchoice",
+    "editor_legacy": "first-choice",
+    "front_end_target": "first-choice"
+  },
+  {
+    "name": "punctuation-collision-second",
+    "input": "first-choice",
+    "php_canonical": "first-choice",
+    "editor_legacy": "first-choice",
+    "front_end_target": "first-choice"
+  },
+  {
+    "name": "old-editor-zero-based-fallback",
+    "input": "",
+    "index": 0,
+    "php_canonical": "slide-1",
+    "editor_legacy": "slide-0",
+    "front_end_target": "slide-1"
+  }
+]

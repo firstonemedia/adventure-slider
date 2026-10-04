@@ -22,6 +22,7 @@
 			return child.classList.contains( 'ea-adventure-slide' );
 		} ) : [];
 		this.byId = Object.create( null );
+		this.aliases = Object.create( null );
 		this.breadcrumbs = root.querySelector( '[data-adventure-breadcrumbs]' );
 		this.breadcrumbList = this.breadcrumbs ? this.breadcrumbs.querySelector( '.ea-adventure-slider__breadcrumb-list' ) : null;
 		this.history = [];
@@ -32,7 +33,7 @@
 		this.destroyed = false;
 		this.editorMode = !! ( window.elementorFrontend && window.elementorFrontend.isEditMode && window.elementorFrontend.isEditMode() );
 		this.options = {
-			initial: this.cleanId( root.dataset.initialSlide ),
+			initial: root.dataset.initialSlide || '',
 			transition: [ 'slide', 'fade', 'none' ].indexOf( root.dataset.transition ) !== -1 ? root.dataset.transition : 'slide',
 			speed: clampNumber( root.dataset.transitionSpeed, 0, 3000, 350 ),
 			swipe: boolData( root.dataset.allowSwipe ),
@@ -58,6 +59,15 @@
 		return VALID_ID.test( value ) ? value : '';
 	};
 
+	AdventureSlider.prototype.resolveId = function ( value ) {
+		var raw = String( value || '' ).toLowerCase();
+		var cleaned = this.cleanId( raw );
+		if ( cleaned && this.byId[ cleaned ] ) {
+			return cleaned;
+		}
+		return this.aliases[ raw ] || this.aliases[ cleaned ] || '';
+	};
+
 	AdventureSlider.prototype.init = function () {
 		var self = this;
 		if ( ! this.slides.length ) {
@@ -75,7 +85,25 @@
 			slide.dataset.adventureSlide = id;
 			self.byId[ id ] = slide;
 		} );
+		this.slides.forEach( function ( slide ) {
+			var id = slide.dataset.adventureSlide;
+			var encodedAliases = slide.getAttribute( 'data-adventure-aliases' );
+			if ( ! encodedAliases ) { return; }
+			try {
+				var aliases = JSON.parse( encodedAliases );
+				if ( ! Array.isArray( aliases ) ) { return; }
+				aliases.forEach( function ( alias ) {
+					alias = String( alias || '' ).toLowerCase();
+					if ( alias && ! self.byId[ alias ] && ! self.aliases[ alias ] ) {
+						self.aliases[ alias ] = id;
+					}
+				} );
+			} catch ( error ) {
+				// Malformed compatibility metadata must not stop normal navigation.
+			}
+		} );
 
+		this.options.initial = this.resolveId( this.options.initial );
 		if ( ! this.options.initial || ! this.byId[ this.options.initial ] ) {
 			this.options.initial = this.slides[ 0 ].dataset.adventureSlide;
 		}
@@ -112,9 +140,16 @@
 			if ( ! Array.isArray( value ) || value.length > 100 ) {
 				return [];
 			}
-			return value.filter( function ( id ) {
-				return typeof id === 'string' && Object.prototype.hasOwnProperty.call( this.byId, id );
+			var restored = [];
+			var restoredIds = Object.create( null );
+			value.forEach( function ( id ) {
+				if ( typeof id !== 'string' ) { return; }
+				var canonicalId = this.resolveId( id );
+				if ( ! canonicalId || restoredIds[ canonicalId ] ) { return; }
+				restoredIds[ canonicalId ] = true;
+				restored.push( canonicalId );
 			}, this );
+			return restored;
 		} catch ( error ) {
 			return [];
 		}
@@ -148,7 +183,7 @@
 
 	AdventureSlider.prototype.navigate = function ( id, options ) {
 		options = options || {};
-		id = this.cleanId( id );
+		id = this.resolveId( id );
 		if ( ! id || ! this.byId[ id ] || id === this.currentId || this.destroyed ) {
 			return false;
 		}
@@ -382,7 +417,7 @@
 	};
 
 	AdventureSlider.prototype.runAction = function ( action ) {
-		action = this.cleanId( action );
+		action = String( action || '' ).toLowerCase();
 		if ( ! action ) { return; }
 		if ( action === 'back' ) { this.back(); return; }
 		if ( action === 'restart' ) { this.restart(); return; }

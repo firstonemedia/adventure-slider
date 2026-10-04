@@ -30,6 +30,21 @@
 		return value || fallback || '';
 	}
 
+	function legacyAliases( value, canonical, index ) {
+		var raw = String( value || '' ).toLowerCase();
+		var aliases = [];
+		[ raw, raw.replace( /[^a-z0-9_-]/g, '' ) ].forEach( function ( alias ) {
+			if ( alias && alias !== canonical && aliases.indexOf( alias ) === -1 ) {
+				aliases.push( alias );
+			}
+		} );
+		if ( ! raw ) {
+			var oldFallback = 'slide-' + index;
+			if ( oldFallback !== canonical ) { aliases.push( oldFallback ); }
+		}
+		return aliases;
+	}
+
 	function updateEditorStatus( root, slideElement ) {
 		var status = root.querySelector( '[data-adventure-editor-status]' );
 		if ( ! status || ! slideElement ) { return; }
@@ -45,6 +60,7 @@
 		var slides = root.querySelectorAll( '.ea-adventure-slider__slides > .ea-adventure-slide' );
 		var activeId = slideElement.dataset.adventureSlide || '';
 		var instance = root.adventureSlider;
+		activeId = instance && instance.resolveId ? instance.resolveId( activeId ) || activeId : activeId;
 
 		if ( instance && activeId && instance.byId && instance.byId[ activeId ] ) {
 			if ( resetHistory ) {
@@ -113,6 +129,7 @@
 				var item = items[ index ] || {};
 				var fallback = 'slide-' + ( index + 1 );
 				var id = cleanId( item.slide_id, fallback );
+				var aliases = legacyAliases( item.slide_id, id, index );
 				var title = String( item.slide_title || fallback );
 				var breadcrumb = String( item.breadcrumb_label || title );
 				var initialId = cleanId( this.model.getSetting( 'initial_slide' ), items[ 0 ] && items[ 0 ].slide_id ? items[ 0 ].slide_id : 'slide-1' );
@@ -127,7 +144,8 @@
 					'role': 'group',
 					'aria-roledescription': 'slide',
 					'aria-label': ( index + 1 ) + ' of ' + items.length + ': ' + title,
-					'aria-hidden': isActive ? 'false' : 'true'
+					'aria-hidden': isActive ? 'false' : 'true',
+					'data-adventure-aliases': aliases.length ? JSON.stringify( aliases ) : null
 				} );
 				if ( ! isActive ) {
 					childView.$el.attr( 'hidden', 'hidden' );

@@ -1,0 +1,31 @@
+[
+  {
+    "name": "canonical IDs",
+    "values": ["start", "choice"],
+    "expected": ["start", "choice"]
+  },
+  {
+    "name": "legacy aliases",
+    "values": ["legacy-start", "old-choice"],
+    "expected": ["start", "choice"]
+  },
+  {
+    "name": "invalid IDs",
+    "values": ["missing", "", 42, null],
+    "expected": []
+  },
+  {
+    "name": "mixed canonical and aliases",
+    "values": ["start", "old-choice", "legacy-start", "choice"],
+    "expected": ["start", "choice"]
+  },
+  {
+    "name": "duplicate canonical values",
+    "values": ["choice", "old-choice", "choice"],
+    "expected": ["choice"]
+  },
+  {
+    "name": "malformed JSON",
+    "malformed_json": "[\"start\""
+  }
+]

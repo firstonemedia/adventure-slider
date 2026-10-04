@@ -1,0 +1,131 @@
+{
+  "page": {
+    "id": 7,
+    "post_type": "page",
+    "post_status": "publish",
+    "post_title": "Adventure Slider Fixture - Defaults",
+    "post_name": "elementor-7"
+  },
+  "elementor_meta": {
+    "keys": [
+      "_elementor_edit_mode",
+      "_elementor_template_type",
+      "_elementor_version",
+      "_elementor_global_class_usage_indexed",
+      "_elementor_global_class_usage_indexed_preview",
+      "_elementor_migrations_state_d2a1",
+      "_elementor_data",
+      "_elementor_page_assets",
+      "_elementor_css",
+      "_elementor_element_cache"
+    ],
+    "values": {
+      "_elementor_edit_mode": "builder",
+      "_elementor_template_type": "wp-page",
+      "_elementor_version": "4.3.3",
+      "_elementor_global_class_usage_indexed": "1",
+      "_elementor_global_class_usage_indexed_preview": "1",
+      "_elementor_migrations_state_d2a1": "4.3.3:4619a43acdb71a3fd22ba7518aa0a7ef",
+      "_elementor_page_assets": {
+        "scripts": [
+          "elementor-frontend",
+          "elementor-adventure-slider"
+        ],
+        "styles": [
+          "elementor-adventure-slider"
+        ]
+      },
+      "_elementor_css": {
+        "time": 1791062453,
+        "fonts": [],
+        "icons": [],
+        "dynamic_elements_ids": [],
+        "status": "file"
+      }
+    },
+    "omitted_from_fixture": [
+      "_elementor_element_cache"
+    ]
+  },
+  "_elementor_data": [
+    {
+      "id": "bf1a91c",
+      "elType": "container",
+      "settings": [],
+      "elements": [
+        {
+          "id": "e75c06f",
+          "elType": "widget",
+          "widgetType": "ea-adventure-slider",
+          "settings": {
+            "slides": [
+              {
+                "slide_title": "Start",
+                "slide_id": "start",
+                "_id": "2da93c5"
+              },
+              {
+                "slide_title": "Choice",
+                "slide_id": "choice",
+                "_id": "53486fb"
+              },
+              {
+                "slide_title": "Result",
+                "slide_id": "result",
+                "_id": "81e9cdb"
+              }
+            ],
+            "initial_slide": "start",
+            "heading_accessibility_label": "Choose a slide",
+            "breadcrumb_separator": "›",
+            "breadcrumb_accessibility_label": "Your journey",
+            "back_label": "Back",
+            "restart_label": "Restart",
+            "previous_label": "Previous",
+            "next_label": "Next",
+            "accessibility_label": "Interactive journey"
+          },
+          "elements": [
+            {
+              "id": "8719782",
+              "elType": "container",
+              "settings": {
+                "_title": "Start",
+                "content_width": "full",
+                "flex_direction": "column"
+              },
+              "elements": [],
+              "isInner": true,
+              "isLocked": true
+            },
+            {
+              "id": "35187cb",
+              "elType": "container",
+              "settings": {
+                "_title": "Choice",
+                "content_width": "full",
+                "flex_direction": "column"
+              },
+              "elements": [],
+              "isInner": true,
+              "isLocked": true
+            },
+            {
+              "id": "c01409d",
+              "elType": "container",
+              "settings": {
+                "_title": "Result",
+                "content_width": "full",
+                "flex_direction": "column"
+              },
+              "elements": [],
+              "isInner": true,
+              "isLocked": true
+            }
+          ]
+        }
+      ],
+      "isInner": false
+    }
+  ]
+}

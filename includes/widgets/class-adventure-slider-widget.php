@@ -825,8 +825,9 @@ final class Adventure_Slider_Widget extends Widget_Nested_Base {
 		$used = [];
 
 		foreach ( $items as $index => $item ) {
+			$raw_id = isset( $item['slide_id'] ) ? (string) $item['slide_id'] : '';
 			$title = isset( $item['slide_title'] ) ? sanitize_text_field( (string) $item['slide_title'] ) : '';
-			$id = isset( $item['slide_id'] ) ? sanitize_key( (string) $item['slide_id'] ) : '';
+			$id = sanitize_key( $raw_id );
 			$breadcrumb_label = isset( $item['breadcrumb_label'] ) ? sanitize_text_field( (string) $item['breadcrumb_label'] ) : '';
 
 			if ( '' === $id || isset( $used[ $id ] ) ) {
@@ -839,6 +840,7 @@ final class Adventure_Slider_Widget extends Widget_Nested_Base {
 			$used[ $id ] = true;
 			$slides[] = [
 				'id'              => $id,
+				'raw_id'          => $raw_id,
 				'title'           => '' !== $title ? $title : sprintf( __( 'Slide %d', 'elementor-adventure-slider' ), $index + 1 ),
 				'breadcrumb'      => '' !== $breadcrumb_label ? $breadcrumb_label : ( '' !== $title ? $title : sprintf( __( 'Slide %d', 'elementor-adventure-slider' ), $index + 1 ) ),
 				'show_in_heading' => ! isset( $item['show_in_heading'] ) || 'yes' === $item['show_in_heading'],
@@ -846,14 +848,43 @@ final class Adventure_Slider_Widget extends Widget_Nested_Base {
 			];
 		}
 
+		$canonical_ids = [];
+		foreach ( $slides as $slide ) {
+			$canonical_ids[ $slide['id'] ] = true;
+		}
+
+		$claimed_aliases = [];
+		foreach ( $slides as $slide_index => $slide ) {
+			$raw_id = strtolower( $slide['raw_id'] );
+			$editor_id = preg_replace( '/[^a-z0-9_-]/', '-', $raw_id );
+			$candidates = [ $raw_id, $editor_id ];
+			if ( '' === $raw_id ) {
+				// The old editor template could produce slide-0 for the first missing ID.
+				$candidates[] = 'slide-' . $slide_index;
+			}
+
+			$aliases = [];
+			foreach ( $candidates as $candidate ) {
+				if ( '' === $candidate || $candidate === $slide['id'] || isset( $canonical_ids[ $candidate ] ) || isset( $claimed_aliases[ $candidate ] ) ) {
+					continue;
+				}
+				$aliases[] = $candidate;
+				$claimed_aliases[ $candidate ] = true;
+			}
+
+			$slides[ $slide_index ]['aliases'] = $aliases;
+			unset( $slides[ $slide_index ]['raw_id'] );
+		}
+
 		return $slides;
 	}
 
 	private function get_initial_slide_id( array $settings, array $slides ): string {
-		$requested = sanitize_key( (string) ( $settings['initial_slide'] ?? '' ) );
+		$requested = strtolower( (string) ( $settings['initial_slide'] ?? '' ) );
+		$sanitised = sanitize_key( $requested );
 		foreach ( $slides as $slide ) {
-			if ( $requested === $slide['id'] ) {
-				return $requested;
+			if ( $requested === $slide['id'] || $sanitised === $slide['id'] || in_array( $requested, $slide['aliases'], true ) ) {
+				return $slide['id'];
 			}
 		}
 
@@ -890,6 +921,10 @@ final class Adventure_Slider_Widget extends Widget_Nested_Base {
 				),
 				'aria-hidden'          => $is_active ? 'false' : 'true',
 			];
+
+			if ( ! empty( $item_settings['aliases'] ) ) {
+				$attributes['data-adventure-aliases'] = wp_json_encode( array_values( $item_settings['aliases'] ) );
+			}
 
 			if ( ! $is_active ) {
 				$attributes['hidden'] = 'hidden';
