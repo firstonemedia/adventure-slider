@@ -9,6 +9,7 @@ const idCases = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'sli
 const sessionCases = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'session-history-cases.json'), 'utf8'));
 const heightCases = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'height-transition-cases.json'), 'utf8'));
 const editorPerformanceCases = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'editor-performance-cases.json'), 'utf8'));
+const autoplayCases = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'autoplay-cases.json'), 'utf8'));
 const pageUrl = process.env.EAS_URL || 'http://127.0.0.1:8091/elementor-7/';
 const widget = fs.readFileSync(path.join(repo, 'includes/widgets/class-adventure-slider-widget.php'), 'utf8');
 const plugin = fs.readFileSync(path.join(repo, 'includes/class-plugin.php'), 'utf8');
@@ -253,6 +254,119 @@ check('editor performance cases cover scaled nested views and safe refresh behav
   has(editor, 'updateBreadcrumbPreview( index )');
   has(editor, 'item.breadcrumb_label || title');
   has(editor, '.ea-adventure-slider__breadcrumb-label[aria-current="step"]');
+});
+
+check('autoplay pause and resume contracts are characterized', () => {
+  assert.deepEqual(autoplayCases.map(testCase => testCase.name), [
+    'enabled-and-unpaused', 'hover-pauses', 'transition-completes-while-hovered',
+    'hover-leaves', 'focus-pauses', 'transition-completes-while-focused',
+    'focus-leaves', 'hover-and-focus', 'one-reason-remains', 'autoplay-disabled',
+    'loop-enabled', 'loop-disabled', 'one-slide', 'destroy-during-autoplay',
+    'multiple-instances'
+  ]);
+
+  function createState( slides, autoplay, loop ) {
+    return { slides, autoplay, loop, current: 0, destroyed: false, hover: false, focus: false, timer: false, timersCreated: 0 };
+  }
+  function canStart( state ) {
+    return state.autoplay && ! state.destroyed && state.slides > 1 && ! state.hover && ! state.focus;
+  }
+  function start( state ) {
+    state.timer = false;
+    if ( ! canStart(state) ) { return; }
+    state.timer = true;
+    state.timersCreated += 1;
+  }
+  function pause( state ) { state.timer = false; }
+  function complete( state ) { start( state ); }
+  function fire( state ) {
+    if ( ! state.timer || ! canStart(state) ) {
+      pause(state);
+      return;
+    }
+    state.timer = false;
+    const before = state.current;
+    if ( state.current < state.slides - 1 ) {
+      state.current += 1;
+    } else if ( state.loop ) {
+      state.current = 0;
+    }
+    if ( before === state.current && ! state.loop ) {
+      pause(state);
+      return;
+    }
+    complete(state);
+  }
+
+  const state = createState( 3, true, false );
+  start( state );
+  assert.equal(state.timersCreated, 1);
+  state.hover = true;
+  pause(state);
+  complete(state);
+  assert.equal(state.timer, false);
+  state.hover = false;
+  start(state);
+  assert.equal(state.timersCreated, 2);
+  state.focus = true;
+  pause(state);
+  state.hover = true;
+  complete(state);
+  assert.equal(state.timer, false);
+  state.hover = false;
+  start(state);
+  assert.equal(state.timer, false);
+  state.focus = false;
+  start(state);
+  assert.equal(state.timersCreated, 3);
+
+  const single = createState( 1, true, true );
+  start(single);
+  assert.equal(single.timer, false);
+  const disabled = createState( 3, false, false );
+  start(disabled);
+  assert.equal(disabled.timer, false);
+  const looping = createState( 2, true, true );
+  start(looping);
+  fire(looping);
+  fire(looping);
+  assert.equal(looping.current, 0);
+  assert.equal(looping.timer, true);
+  const nonLooping = createState( 2, true, false );
+  start(nonLooping);
+  fire(nonLooping);
+  fire(nonLooping);
+  assert.equal(nonLooping.current, 1);
+  assert.equal(nonLooping.timer, false);
+  const destroyed = createState( 3, true, true );
+  start(destroyed);
+  destroyed.destroyed = true;
+  pause(destroyed);
+  complete(destroyed);
+  assert.equal(destroyed.timer, false);
+  const first = createState( 3, true, true );
+  const second = createState( 3, true, true );
+  start(first);
+  start(second);
+  first.hover = true;
+  pause(first);
+  complete(first);
+  assert.equal(first.timer, false);
+  assert.equal(second.timer, true);
+
+  has(frontend, 'this.autoplayPauses = { hover: false, focus: false }');
+  has(frontend, 'canStartAutoplay');
+  has(frontend, 'this.slides.length > 1');
+  has(frontend, 'this.autoplayPauses.hover');
+  has(frontend, 'this.autoplayPauses.focus');
+  has(frontend, 'pauseForHover');
+  has(frontend, 'resumeFromHover');
+  has(frontend, 'pauseForFocus');
+  has(frontend, 'resumeFromFocus');
+  has(frontend, 'event.relatedTarget');
+  has(frontend, 'self.autoplayTimer = 0');
+  has(frontend, 'if ( this.canStartAutoplay() )');
+  has(frontend, 'this.root.removeEventListener( \'mouseenter\', this.boundHoverPause )');
 });
 
 async function liveChecks() {

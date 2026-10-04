@@ -4,7 +4,7 @@ Tags: elementor, slider, carousel, branching, choose your own adventure
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -54,6 +54,14 @@ No. It relies on Elementor's stable Nested Elements infrastructure available in 
 No. The plugin has no frontend network endpoints. Optional path restoration stores only the slider's named slide IDs in sessionStorage for the current browser tab.
 
 == Changelog ==
+
+= 1.3.0 =
+* Added compatibility-safe legacy slide ID aliases without rewriting existing Elementor data.
+* Improved editor performance when editing slide titles, IDs and breadcrumb labels.
+* Stabilized transition height changes between slides.
+* Polished responsive and keyboard-focus navigation.
+* Corrected autoplay pause and resume behaviour for hover, focus and completed transitions.
+* Preserved compatibility with existing Elementor sliders and their public contracts.
 
 = 1.2.0 =
 * Fixed slide metadata in Elementor 4.3 so canvas buttons select the correct named slide.

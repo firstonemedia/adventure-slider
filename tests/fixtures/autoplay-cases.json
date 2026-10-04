@@ -1,0 +1,17 @@
+[
+  { "name": "enabled-and-unpaused", "expected": "one-timer" },
+  { "name": "hover-pauses", "expected": "no-timer" },
+  { "name": "transition-completes-while-hovered", "expected": "no-restart" },
+  { "name": "hover-leaves", "expected": "one-timer" },
+  { "name": "focus-pauses", "expected": "no-timer" },
+  { "name": "transition-completes-while-focused", "expected": "no-restart" },
+  { "name": "focus-leaves", "expected": "one-timer" },
+  { "name": "hover-and-focus", "expected": "both-reasons-required-to-resume" },
+  { "name": "one-reason-remains", "expected": "no-timer" },
+  { "name": "autoplay-disabled", "expected": "no-timer" },
+  { "name": "loop-enabled", "expected": "repeating-single-timer" },
+  { "name": "loop-disabled", "expected": "stops-at-last-slide" },
+  { "name": "one-slide", "expected": "no-timer" },
+  { "name": "destroy-during-autoplay", "expected": "cleared-and-no-restart" },
+  { "name": "multiple-instances", "expected": "isolated-pause-state" }
+]

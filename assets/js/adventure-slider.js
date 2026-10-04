@@ -30,6 +30,7 @@
 		this.animations = [];
 		this.heightTransition = null;
 		this.autoplayTimer = 0;
+		this.autoplayPauses = { hover: false, focus: false };
 		this.pointerStart = null;
 		this.destroyed = false;
 		this.editorMode = !! ( window.elementorFrontend && window.elementorFrontend.isEditMode && window.elementorFrontend.isEditMode() );
@@ -50,8 +51,10 @@
 		this.boundKeydown = this.onKeydown.bind( this );
 		this.boundPointerDown = this.onPointerDown.bind( this );
 		this.boundPointerUp = this.onPointerUp.bind( this );
-		this.boundPause = this.pauseAutoplay.bind( this );
-		this.boundResume = this.startAutoplay.bind( this );
+		this.boundHoverPause = this.pauseForHover.bind( this );
+		this.boundHoverResume = this.resumeFromHover.bind( this );
+		this.boundFocusPause = this.pauseForFocus.bind( this );
+		this.boundFocusResume = this.resumeFromFocus.bind( this );
 		this.init();
 	}
 
@@ -124,12 +127,16 @@
 			this.slidesRoot.addEventListener( 'pointerup', this.boundPointerUp, { passive: true } );
 		}
 		if ( this.options.pauseOnHover ) {
-			this.root.addEventListener( 'mouseenter', this.boundPause );
-			this.root.addEventListener( 'mouseleave', this.boundResume );
-			this.root.addEventListener( 'focusin', this.boundPause );
-			this.root.addEventListener( 'focusout', this.boundResume );
+			this.root.addEventListener( 'mouseenter', this.boundHoverPause );
+			this.root.addEventListener( 'mouseleave', this.boundHoverResume );
+			this.root.addEventListener( 'focusin', this.boundFocusPause );
+			this.root.addEventListener( 'focusout', this.boundFocusResume );
 		}
-		this.startAutoplay();
+		if ( this.canStartAutoplay() ) {
+			this.startAutoplay();
+		} else {
+			this.pauseAutoplay();
+		}
 	};
 
 	AdventureSlider.prototype.restoreHistory = function () {
@@ -268,7 +275,11 @@
 			bubbles: true,
 			detail: { slideId: this.currentId, previousSlideId: from ? from.dataset.adventureSlide : '' }
 		} ) );
-		this.startAutoplay();
+		if ( this.canStartAutoplay() ) {
+			this.startAutoplay();
+		} else {
+			this.pauseAutoplay();
+		}
 	};
 
 	AdventureSlider.prototype.measureStackHeight = function () {
@@ -570,17 +581,46 @@
 		}
 	};
 
+	AdventureSlider.prototype.canStartAutoplay = function () {
+		return this.options.autoplay && ! this.editorMode && ! this.destroyed && this.slides.length > 1 && ! this.autoplayPauses.hover && ! this.autoplayPauses.focus;
+	};
+
 	AdventureSlider.prototype.startAutoplay = function () {
 		this.pauseAutoplay();
-		if ( ! this.options.autoplay || this.editorMode || this.destroyed ) { return; }
+		if ( ! this.canStartAutoplay() ) { return; }
 		var self = this;
 		this.autoplayTimer = window.setTimeout( function () {
+			self.autoplayTimer = 0;
+			if ( ! self.canStartAutoplay() ) { return; }
 			var before = self.currentId;
 			self.relative( 1 );
 			if ( before === self.currentId && ! self.options.loop ) {
 				self.pauseAutoplay();
 			}
 		}, this.options.autoplayDelay );
+	};
+
+	AdventureSlider.prototype.pauseForHover = function () {
+		this.autoplayPauses.hover = true;
+		this.pauseAutoplay();
+	};
+
+	AdventureSlider.prototype.resumeFromHover = function () {
+		this.autoplayPauses.hover = false;
+		this.startAutoplay();
+	};
+
+	AdventureSlider.prototype.pauseForFocus = function () {
+		this.autoplayPauses.focus = true;
+		this.pauseAutoplay();
+	};
+
+	AdventureSlider.prototype.resumeFromFocus = function ( event ) {
+		if ( event.relatedTarget && this.root.contains( event.relatedTarget ) ) {
+			return;
+		}
+		this.autoplayPauses.focus = false;
+		this.startAutoplay();
 	};
 
 	AdventureSlider.prototype.pauseAutoplay = function () {
@@ -601,10 +641,10 @@
 			this.slidesRoot.removeEventListener( 'pointerdown', this.boundPointerDown );
 			this.slidesRoot.removeEventListener( 'pointerup', this.boundPointerUp );
 		}
-		this.root.removeEventListener( 'mouseenter', this.boundPause );
-		this.root.removeEventListener( 'mouseleave', this.boundResume );
-		this.root.removeEventListener( 'focusin', this.boundPause );
-		this.root.removeEventListener( 'focusout', this.boundResume );
+		this.root.removeEventListener( 'mouseenter', this.boundHoverPause );
+		this.root.removeEventListener( 'mouseleave', this.boundHoverResume );
+		this.root.removeEventListener( 'focusin', this.boundFocusPause );
+		this.root.removeEventListener( 'focusout', this.boundFocusResume );
 	};
 
 	function mount( scope ) {
