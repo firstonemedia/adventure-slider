@@ -212,6 +212,51 @@ check('multiple-slider isolation contract is present in source', () => {
   has(frontend, 'root.dataset.adventureInstance');
 });
 
+check('transition values, defaults, and directional frame semantics are characterized', () => {
+  const values = ['slide', 'slide-left', 'slide-right', 'slide-up', 'slide-down', 'fade', 'none'];
+  assert.deepEqual(values.filter(value => new RegExp("'" + value + "'\\s*=>").test(widget)), values);
+  has(widget, "[ 'slide', 'slide-left', 'slide-right', 'slide-up', 'slide-down', 'fade', 'none' ]");
+  has(frontend, "var VALID_TRANSITIONS = [ 'slide', 'slide-left', 'slide-right', 'slide-up', 'slide-down', 'fade', 'none' ];");
+  has(frontend, 'VALID_TRANSITIONS.indexOf( root.dataset.transition )');
+  has(css, '--ea-transition-distance: 35%');
+  has(widget, "'default'    => [ 'size' => 35, 'unit' => '%' ]");
+  assert.equal(widgetData.settings.transition, undefined, 'omitted saved settings still resolve through the slide default');
+
+  const frames = (transition, direction) => {
+    const vertical = transition === 'slide-up' || transition === 'slide-down';
+    const forwardSign = transition === 'slide-right' || transition === 'slide-down' ? -1 : 1;
+    const travelSign = forwardSign * (direction === 'back' ? -1 : 1);
+    return { axis: vertical ? 'translateY' : 'translateX', outgoing: -travelSign, incoming: travelSign };
+  };
+  for (const [transition, direction, axis, outgoing, incoming] of [
+    ['slide', 'forward', 'translateX', -1, 1], ['slide-left', 'forward', 'translateX', -1, 1],
+    ['slide-right', 'forward', 'translateX', 1, -1], ['slide-up', 'forward', 'translateY', -1, 1],
+    ['slide-down', 'forward', 'translateY', 1, -1], ['slide', 'back', 'translateX', 1, -1],
+    ['slide-left', 'back', 'translateX', 1, -1], ['slide-right', 'back', 'translateX', -1, 1],
+    ['slide-up', 'back', 'translateY', 1, -1], ['slide-down', 'back', 'translateY', -1, 1]
+  ]) {
+    assert.deepEqual(frames(transition, direction), {axis, outgoing, incoming}, transition + ' ' + direction);
+  }
+  has(frontend, "transition === 'fade'");
+  has(frontend, "this.options.transition === 'none'");
+  has(frontend, "transform + '(calc(' + distance + ' * ' + travelSign + '))'");
+  has(frontend, 'self.transitionToken === transitionToken');
+  has(frontend, 'this.transitionToken = 0');
+});
+
+check('navigation intent and immediate transition fallbacks remain explicit', () => {
+  has(frontend, "this.navigate( id, { direction: 'forward' } )");
+  has(frontend, "this.navigate( target, { push: false, direction: 'back' } )");
+  has(frontend, "direction: delta < 0 ? 'back' : 'forward'");
+  has(frontend, "if ( ! from || this.options.transition === 'none' || this.options.speed === 0 || reducedMotion || this.editorMode )");
+  has(frontend, "typeof from.animate !== 'function' || typeof to.animate !== 'function'");
+  has(frontend, "this.clearHeightTransition()");
+  has(frontend, "slide.style.removeProperty( 'transform' )");
+  has(frontend, "slide.style.removeProperty( 'opacity' )");
+  has(frontend, "root.adventureSlider = instance");
+  has(frontend, 'detail: { slideId: this.currentId, previousSlideId:');
+});
+
 check('height transition cases and defensive runtime contract are present', () => {
   assert.deepEqual(heightCases.map(testCase => testCase.name), [
     'different-height-slides', 'equal-height-slides', 'empty-slide',

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Elementor Adventure Slider
  * Description: Elementor-native branching sliders with named slides, journey history, Back, Restart, arrows, dots, swipe, keyboard navigation, and ordinary Button widget actions.
- * Version:     1.3.0
+ * Version:     1.4.0
  * Author:      Tim Doyle
  * License:     GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'EAS_VERSION', '1.3.0' );
+define( 'EAS_VERSION', '1.4.0' );
 define( 'EAS_MINIMUM_ELEMENTOR_VERSION', '3.26.0' );
 define( 'EAS_FILE', __FILE__ );
 define( 'EAS_PATH', plugin_dir_path( EAS_FILE ) );

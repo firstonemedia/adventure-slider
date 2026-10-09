@@ -24,6 +24,14 @@ PHP uses `sanitize_key()` and its fallback is `slide-(index + 1)` ([includes/wid
 
 The real defaults fixture explicitly stores its three `slide_title`/`slide_id` pairs and selected accessibility/label settings. It omits `breadcrumb_label`, `show_in_heading`, transition, autoplay, and other controls, so those currently rely on control or runtime defaults.
 
+## Transitions
+
+The `transition` setting continues to accept the stored values `slide`, `fade`, and `none`, and additionally accepts `slide-left`, `slide-right`, `slide-up`, and `slide-down`. Missing or unsupported values render and run as `slide`; no saved Elementor data is migrated. `slide` is horizontal and intentionally now uses the configurable default movement distance of `35%` (previously `12%`) so existing sliders with an omitted distance have a visibly stronger movement. Existing sliders that explicitly saved a distance keep that value.
+
+For all slide modes, forward navigation uses the named direction: `slide`/`slide-left` moves left (the incoming slide enters from the right), `slide-right` moves right, `slide-up` moves up, and `slide-down` moves down. Back reverses that direction. Direct `#adventure:<id>` links, Button-generated targets, heading/dot targets, and autoplay are forward; Back, breadcrumbs, restart, Previous, and negative relative navigation are back. Initial selection and restored session history do not animate. Fade remains opacity-only, and None, zero speed, reduced motion, editor mode, or missing `Element.animate()` finish immediately.
+
+Slide transitions retain their existing opacity cross-fade while adding the stronger directional transform. The slide stack remains grid-overlapped and clipped by CSS. A monotonically increasing transition token prevents a completion from a cancelled older animation from finalizing a newer navigation.
+
 ## Compatibility-safe ID resolution
 
 The canonical ID remains the PHP `sanitize_key()` result, or the existing deterministic `slide-(index + 1)` fallback. The renderer now adds `data-adventure-aliases` only when a legacy spelling needs compatibility. Aliases include the lowercased raw ID, the editor-style punctuation replacement, and the old zero-based missing-ID fallback where applicable. Canonical IDs always take precedence; the first claimed alias wins; duplicate canonical IDs retain the existing fallback and never overwrite an earlier target. The alias metadata is additive and stored Elementor data is not rewritten.

@@ -4,6 +4,7 @@
 	var instances = new WeakMap();
 	var ACTION_PREFIX = '#adventure:';
 	var VALID_ID = /^[a-z0-9_-]+$/;
+	var VALID_TRANSITIONS = [ 'slide', 'slide-left', 'slide-right', 'slide-up', 'slide-down', 'fade', 'none' ];
 	var INTERACTIVE_SELECTOR = 'a, button, input, select, textarea, [contenteditable="true"], [role="button"]';
 
 	function boolData( value ) {
@@ -28,6 +29,7 @@
 		this.history = [];
 		this.currentId = '';
 		this.animations = [];
+		this.transitionToken = 0;
 		this.heightTransition = null;
 		this.autoplayTimer = 0;
 		this.autoplayPauses = { hover: false, focus: false };
@@ -36,7 +38,7 @@
 		this.editorMode = !! ( window.elementorFrontend && window.elementorFrontend.isEditMode && window.elementorFrontend.isEditMode() );
 		this.options = {
 			initial: root.dataset.initialSlide || '',
-			transition: [ 'slide', 'fade', 'none' ].indexOf( root.dataset.transition ) !== -1 ? root.dataset.transition : 'slide',
+			transition: VALID_TRANSITIONS.indexOf( root.dataset.transition ) !== -1 ? root.dataset.transition : 'slide',
 			speed: clampNumber( root.dataset.transitionSpeed, 0, 3000, 350 ),
 			swipe: boolData( root.dataset.allowSwipe ),
 			keyboard: boolData( root.dataset.keyboardNavigation ),
@@ -189,6 +191,31 @@
 		this.updateUi();
 	};
 
+	AdventureSlider.prototype.getSlideFrames = function ( direction, distance ) {
+		var transition = this.options.transition;
+		if ( transition === 'fade' ) {
+			return {
+				from: [ { opacity: 1 }, { opacity: 0 } ],
+				to: [ { opacity: 0 }, { opacity: 1 } ]
+			};
+		}
+
+		var vertical = transition === 'slide-up' || transition === 'slide-down';
+		var forwardSign = transition === 'slide-right' || transition === 'slide-down' ? -1 : 1;
+		var travelSign = forwardSign * ( direction === 'back' ? -1 : 1 );
+		var transform = vertical ? 'translateY' : 'translateX';
+		return {
+			from: [
+				{ opacity: 1, transform: transform + '(0)' },
+				{ opacity: 0, transform: transform + '(calc(' + distance + ' * ' + ( -travelSign ) + '))' }
+			],
+			to: [
+				{ opacity: 0, transform: transform + '(calc(' + distance + ' * ' + travelSign + '))' },
+				{ opacity: 1, transform: transform + '(0)' }
+			]
+		};
+	};
+
 	AdventureSlider.prototype.navigate = function ( id, options ) {
 		options = options || {};
 		id = this.resolveId( id );
@@ -205,6 +232,7 @@
 		this.currentId = id;
 		this.saveHistory();
 		this.cancelAnimations();
+		var transitionToken = ++this.transitionToken;
 
 		var reducedMotion = window.matchMedia && window.matchMedia( '(prefers-reduced-motion: reduce)' ).matches;
 		if ( ! from || this.options.transition === 'none' || this.options.speed === 0 || reducedMotion || this.editorMode ) {
@@ -218,24 +246,8 @@
 		this.startHeightTransition();
 		from.setAttribute( 'aria-hidden', 'true' );
 		this.slidesRoot.classList.add( 'is-transitioning' );
-		var distance = getComputedStyle( this.root ).getPropertyValue( '--ea-transition-distance' ).trim() || '12%';
-		var sign = direction === 'back' ? -1 : 1;
-		var fromFrames;
-		var toFrames;
-
-		if ( this.options.transition === 'fade' ) {
-			fromFrames = [ { opacity: 1 }, { opacity: 0 } ];
-			toFrames = [ { opacity: 0 }, { opacity: 1 } ];
-		} else {
-			fromFrames = [
-				{ opacity: 1, transform: 'translateX(0)' },
-				{ opacity: 0, transform: 'translateX(calc(' + distance + ' * ' + ( -sign ) + '))' }
-			];
-			toFrames = [
-				{ opacity: 0, transform: 'translateX(calc(' + distance + ' * ' + sign + '))' },
-				{ opacity: 1, transform: 'translateX(0)' }
-			];
-		}
+		var distance = getComputedStyle( this.root ).getPropertyValue( '--ea-transition-distance' ).trim() || '35%';
+		var frames = this.getSlideFrames( direction, distance );
 
 		var timing = { duration: this.options.speed, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'both' };
 		if ( typeof from.animate !== 'function' || typeof to.animate !== 'function' ) {
@@ -243,12 +255,12 @@
 			return true;
 		}
 
-		var fromAnimation = from.animate( fromFrames, timing );
-		var toAnimation = to.animate( toFrames, timing );
+		var fromAnimation = from.animate( frames.from, timing );
+		var toAnimation = to.animate( frames.to, timing );
 		this.animations = [ fromAnimation, toAnimation ];
 		var self = this;
 		Promise.allSettled( [ fromAnimation.finished, toAnimation.finished ] ).then( function () {
-			if ( self.currentId === id && ! self.destroyed ) {
+			if ( self.transitionToken === transitionToken && self.currentId === id && ! self.destroyed ) {
 				self.finishTransition( from, to, options );
 			}
 		} );

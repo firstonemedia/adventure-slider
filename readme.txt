@@ -4,7 +4,7 @@ Tags: elementor, slider, carousel, branching, choose your own adventure
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -54,6 +54,16 @@ No. It relies on Elementor's stable Nested Elements infrastructure available in 
 No. The plugin has no frontend network endpoints. Optional path restoration stores only the slider's named slide IDs in sessionStorage for the current browser tab.
 
 == Changelog ==
+
+= 1.4.0 =
+* Added compatibility-safe legacy slide ID aliases without requiring an Elementor data migration.
+* Improved Elementor editor performance when editing slide titles, IDs and breadcrumb labels.
+* Polished responsive navigation and keyboard focus states.
+* Stabilized transition height changes between slides and corrected autoplay pause and resume behaviour.
+* Strengthened horizontal slide movement and added slide-left, slide-right, slide-up and slide-down transition modes.
+* Back now reverses the selected slide direction; fade and none remain supported.
+* Added stale-animation protection so cancelled transitions cannot complete a newer navigation.
+* Changed the default slide movement from 12% to 35% while preserving explicitly saved movement distances.
 
 = 1.3.0 =
 * Added compatibility-safe legacy slide ID aliases without rewriting existing Elementor data.

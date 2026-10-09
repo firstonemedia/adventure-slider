@@ -221,9 +221,13 @@ final class Adventure_Slider_Widget extends Widget_Nested_Base {
 				'type'    => Controls_Manager::SELECT,
 				'default' => 'slide',
 				'options' => [
-					'slide' => esc_html__( 'Slide', 'elementor-adventure-slider' ),
-					'fade'  => esc_html__( 'Fade', 'elementor-adventure-slider' ),
-					'none'  => esc_html__( 'None', 'elementor-adventure-slider' ),
+					'slide'       => esc_html__( 'Slide — horizontal', 'elementor-adventure-slider' ),
+					'slide-left'  => esc_html__( 'Slide left', 'elementor-adventure-slider' ),
+					'slide-right' => esc_html__( 'Slide right', 'elementor-adventure-slider' ),
+					'slide-up'    => esc_html__( 'Slide up', 'elementor-adventure-slider' ),
+					'slide-down'  => esc_html__( 'Slide down', 'elementor-adventure-slider' ),
+					'fade'        => esc_html__( 'Fade', 'elementor-adventure-slider' ),
+					'none'        => esc_html__( 'None', 'elementor-adventure-slider' ),
 				],
 			]
 		);
@@ -448,7 +452,7 @@ final class Adventure_Slider_Widget extends Widget_Nested_Base {
 				'label'      => esc_html__( 'Slide movement', 'elementor-adventure-slider' ),
 				'type'       => Controls_Manager::SLIDER,
 				'size_units' => [ '%', 'px' ],
-				'default'    => [ 'size' => 12, 'unit' => '%' ],
+				'default'    => [ 'size' => 35, 'unit' => '%' ],
 				'selectors'  => [
 					'{{WRAPPER}} .ea-adventure-slider' => '--ea-transition-distance: {{SIZE}}{{UNIT}};',
 				],
@@ -956,7 +960,7 @@ final class Adventure_Slider_Widget extends Widget_Nested_Base {
 			'class'                    => 'ea-adventure-slider',
 			'data-adventure-instance'  => $this->get_id(),
 			'data-initial-slide'       => $initial_id,
-			'data-transition'          => in_array( $settings['transition'] ?? '', [ 'slide', 'fade', 'none' ], true ) ? $settings['transition'] : 'slide',
+			'data-transition'          => in_array( $settings['transition'] ?? '', [ 'slide', 'slide-left', 'slide-right', 'slide-up', 'slide-down', 'fade', 'none' ], true ) ? $settings['transition'] : 'slide',
 			'data-transition-speed'    => (string) min( 3000, max( 0, (int) ( $settings['transition_speed'] ?? 350 ) ) ),
 			'data-allow-swipe'         => 'yes' === ( $settings['allow_swipe'] ?? '' ) ? 'true' : 'false',
 			'data-keyboard-navigation' => 'yes' === ( $settings['keyboard_navigation'] ?? '' ) ? 'true' : 'false',
